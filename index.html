@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>San Diego Transit Accessibility Project</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+    <header>
+        <h1>San Diego Public Transit Accessibility</h1>
+        <p>Identifying Transit Deserts & Improving Coverage Using GIS</p>
+    </header>
+
+    <div class="section">
+        <h2>Introduction</h2>
+        <p>San Diego County has a diverse and growing population, yet many communities lack equitable access to public transportation. This project uses GIS and network analysis to identify transit deserts — regions that are underserved by the current transit system — and proposes data-driven policy improvements.</p>
+    </div>
+
+    <div class="section">
+        <h2>Step 1: Gathering the Data</h2>
+        <p>We collected spatial datasets from SANDAG and GTFS feeds, including transit stops, transit routes, census tracts, and road networks. These were used to analyze spatial accessibility and routing efficiency.</p>
+        <h3>Transportation</h3>
+        <p>Transit Stops and Transit Routs can be found with clicking on <strong>Transportation</strong> on the dashboard. Once you have clicked on the Transportation you can scroll down to <code>Transit_Routes_GTFS</code> and <code>Transit_Stops_GTFS</code>. While you are getting both <code>Transit_Routes_GTFS</code> and <code>Transit_Stops_GTFS</code> you can also get <code>Roads_All</code></p>
+        <h3>Cencus</h3>
+        <p>For Gathering Census tracts you click on the <strong>Cencus</strong> on the dashboard. Once you have clicked on the Census you can scroll down to <code>Census_Tracts_2020</code></p>
+        <p>For all the data you will be clicking on the <code>GeoJson</code> to downloads the GeoJson file, which will make your life easier handling the data.</p>
+        <p>Here is a photo of the dashboard for your help:</p>
+        <img src="/assets/Images/Data_DashBoard.png" alt="Data_Dashboard_SanGIS_SANDAG">
+        <a href="https://geo.sandag.org/portal/apps/experiencebuilder/experience/?id=fad9e9c038c84f799b5378e4cc3ed068&page=Home#data_s=id%3AdataSource_1-0%3A227" class="btn" target="_blank">📁 Access Dataset</a>
+    </div>
+
+    <div class="section">
+        <h2>Step 2: Data Cleaning & Preprocessing</h2>
+        <p>Before performing any spatial analysis, we needed to clean and standardize the input datasets. This ensured consistent geometry, attribute structure, and measurement accuracy.</p>
+    
+        <p>We used Python libraries such as <code>geopandas</code>, <code>shapely</code>, and <code>pandas</code> to carry out the following steps:</p>
+        <ul>
+            <li><strong>Coordinate Reference System (CRS) Alignment:</strong> All datasets were converted to EPSG:32611 (UTM Zone 11N), which uses meters as its unit — essential for accurate buffer and distance calculations.</li>
+            <li><strong>Transit Stop Cleanup:</strong> Duplicate or null-value entries were filtered from the GTFS stop dataset.</li>
+            <li><strong>Road Network Merging:</strong> All road segments were joined into a unified dataset to support route analysis using <code>networkx</code>.</li>
+        </ul>
+
+    
+        <p>This preprocessing phase provided a clean and consistent foundation for identifying coverage gaps in the next step. Before we can identify the coverage gaps we should loads each dataset as a layers of the map.</p>
+        <p>Here is each layer name and photo for context.</p>
+        <ul>
+            <li><strong>Transit_Routes_GTFS_by_DP:</strong><img src="/assets/Images/Transit_Routes_GTFS.png" alt="Transit_Routes_GTFS_by_DP_Layer"></li>
+            <li><strong>Transit_Stops_GTFS_by_DP:</strong><img src="/assets/Images/Transit_Stops_GTFS.png" alt="Transit_Stops_GTFS_by_DP_Layer"></li>
+            <li><strong>Census_Tracts_2020_SD_by_DP:</strong><img src="/assets/Images/Census_Tracts_2020.png" alt="Census_Tracts_2020_SD_by_DP_Layer"></li>
+        </ul>
+        <p style="text-align: center; font-size: 0.9rem;"><em>All datasets were standardized and cleaned before spatial processing.</em></p>
+    </div>
+  
+
+    <div class="section">
+        <h2>Step 3: Identifying Transit Deserts</h2>
+        <p>We applied a 3-mile (4,828 meter) buffer around each public transit stop to simulate accessible zones. These buffers were merged to form a single polygon that represents areas covered by public transit access.</p>
+    
+        <p>Using <code>geopandas</code> and <code>shapely</code>, we then ran a spatial difference operation to subtract this covered area from all census tracts in San Diego County. This revealed which tracts had <strong>no overlap</strong> with the buffered coverage area.</p>
+    
+        <ul>
+            <li><strong>Buffering:</strong> Applied using <code>gdf.buffer(4828)</code></li>
+            <li><strong>Merging Buffers:</strong> Used <code>unary_union</code> to consolidate overlapping areas</li>
+            <li><strong>Difference Operation:</strong> Census tract geometries were compared against the coverage polygon</li>
+        </ul>
+    
+        <p>The result was a GeoDataFrame of <strong>27 uncovered census tracts</strong> — representing San Diego’s transit deserts. These were saved to GeoJSON and published as a public ArcGIS feature layer for visualization and planning purposes. The layer is named <code>Uncovered_Transit_Areas_SD_by_DP</code></p>
+    
+        <img src="/assets/Images/transit_deserts.png" alt="Transit Desert Visualization">
+        <p style="text-align: center; font-size: 0.9rem;"><em>Transit deserts: census tracts without public transit access within 3 miles.</em></p>
+    </div>
+
+    <div class="section">
+        <h2>Interactive Map</h2>
+        <p>Now we have all four layer <code>Transit_Routes_GTFS_by_DP</code>,<code>Transit_Stops_GTFS_by_DP</code>,<code>Census_Tracts_2020_SD_by_DP</code>, and <code>Uncovered_Transit_Areas_SD_by_DP</code>, after we published the ArcGIS feature layer and made it public.</p>
+        <p>We create a map of San Diego and added all the public layers to the map and then make the map public, Below is the interactive map that I have created. More over you can see the public map at https://ucsdonline.maps.arcgis.com/home/item.html?id=81de033179ae43b0a5a5dbb7312483bd</p>
+        <iframe src="https://ucsdonline.maps.arcgis.com/apps/webappviewer/index.html?id=6ab51c5b08f04c8ba16018184200f1bc" allowfullscreen></iframe>
+        <p>🔗 <strong>Want the full narrative?</strong> View the interactive StoryMap below:</p>
+        <a href="https://arcg.is/15LLHi0" class="btn" target="_blank">📖 View StoryMap</a>
+    </div>
+
+    <div class="section">
+        <h2>Conclusion</h2>
+        <p>This project highlights the power of spatial analysis in urban planning. By identifying underserved areas and proposing new transit routes, we can guide infrastructure development to be more equitable and efficient. This analysis serves as a blueprint for cities looking to modernize their transit systems with data-driven strategies.</p>
+    </div>
+
+    <footer>
+        <p>© 2025 Dhruv Patel · UC San Diego · <a href="mailto:dhruv.patel.imp@gmail.com" style="color: #fff;">Contact</a></p>
+    </footer>
+
+</body>
+</html>
